@@ -26,7 +26,7 @@ function shouldContinue(state: AgentStateType): "tools" | typeof END {
 export async function createLeadAgent(modelName?: string) {
   const model = await createChatModel(modelName);
   const tools = getAvailableTools();
-  const modelWithTools = model.bindTools(tools);
+  const modelWithTools = model.bindTools!(tools);
   const toolNode = new ToolNode(tools);
 
   async function callModel(state: AgentStateType) {

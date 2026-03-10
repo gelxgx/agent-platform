@@ -19,17 +19,18 @@ export const webSearchTool = tool(
           include_answer: true,
         }),
       });
-      const data = await response.json();
+      const data = (await response.json()) as {
+        answer?: string;
+        results?: { title: string; url: string; content: string }[];
+      };
       if (data.answer) {
         const sources = (data.results ?? [])
-          .map((r: { title: string; url: string }) => `- ${r.title}: ${r.url}`)
+          .map((r) => `- ${r.title}: ${r.url}`)
           .join("\n");
         return `${data.answer}\n\nSources:\n${sources}`;
       }
       return (data.results ?? [])
-        .map((r: { title: string; url: string; content: string }) =>
-          `**${r.title}**\n${r.url}\n${r.content}`
-        )
+        .map((r) => `**${r.title}**\n${r.url}\n${r.content}`)
         .join("\n\n");
     } catch (error) {
       return `Search failed: ${error instanceof Error ? error.message : String(error)}`;
