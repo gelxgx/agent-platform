@@ -1,10 +1,10 @@
-defaultModel: "gpt-4o"
+defaultModel: "gpt-5.2"
 
 models:
-  - name: "gpt-4o"
-    displayName: "GPT-4o"
+  - name: "gpt-5.2"
+    displayName: "GPT-5.2"
     provider: "openai"
-    model: "gpt-4o"
+    model: "gpt-5.2"
     apiKey: "$OPENAI_API_KEY"
     baseURL: "$OPENAI_BASE_URL"
     maxTokens: 4096
@@ -12,10 +12,10 @@ models:
     supportsThinking: false
     supportsVision: true
 
-  - name: "gpt-4o-mini"
-    displayName: "GPT-4o Mini"
+  - name: "gpt-5.3-codex"
+    displayName: "GPT-5.3 Codex"
     provider: "openai"
-    model: "gpt-4o-mini"
+    model: "gpt-5.3-codex"
     apiKey: "$OPENAI_API_KEY"
     baseURL: "$OPENAI_BASE_URL"
     maxTokens: 4096

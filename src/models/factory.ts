@@ -30,6 +30,7 @@ export async function createChatModel(name?: string): Promise<BaseChatModel> {
     apiKey: config.apiKey,
     maxTokens: config.maxTokens,
     temperature: config.temperature,
+    streaming: true,
     maxRetries: 2,
     timeout: 60000,
   };
