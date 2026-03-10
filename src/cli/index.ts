@@ -82,14 +82,24 @@ export async function startCli() {
         );
 
         for await (const [message, _metadata] of stream) {
-          if (message.content && typeof message.content === "string") {
+          if (!message.content) continue;
+          if (typeof message.content === "string") {
             process.stdout.write(message.content);
+          } else if (Array.isArray(message.content)) {
+            for (const block of message.content) {
+              if (typeof block === "string") {
+                process.stdout.write(block);
+              } else if (block && typeof block === "object" && "text" in block) {
+                process.stdout.write((block as { text: string }).text);
+              }
+            }
           }
         }
         process.stdout.write("\n\n");
       } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
         console.log(
-          `\n${COLORS.yellow}Error: ${error instanceof Error ? error.message : String(error)}${COLORS.reset}\n`
+          `\n${COLORS.yellow}Error: ${msg}${COLORS.reset}\n`
         );
       }
 

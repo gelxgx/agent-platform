@@ -26,10 +26,12 @@ export async function createChatModel(name?: string): Promise<BaseChatModel> {
 
   const ModelClass = await factory();
   const opts: Record<string, unknown> = {
-    modelName: config.model,
+    model: config.model,
     apiKey: config.apiKey,
     maxTokens: config.maxTokens,
     temperature: config.temperature,
+    maxRetries: 2,
+    timeout: 60000,
   };
   if (config.baseURL) {
     opts.configuration = { baseURL: config.baseURL };
