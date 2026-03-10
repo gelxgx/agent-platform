@@ -6,6 +6,7 @@ models:
     provider: "openai"
     model: "gpt-4o"
     apiKey: "$OPENAI_API_KEY"
+    baseURL: "$OPENAI_BASE_URL"
     maxTokens: 4096
     temperature: 0.7
     supportsThinking: false
@@ -16,6 +17,7 @@ models:
     provider: "openai"
     model: "gpt-4o-mini"
     apiKey: "$OPENAI_API_KEY"
+    baseURL: "$OPENAI_BASE_URL"
     maxTokens: 4096
     temperature: 0.7
     supportsThinking: false

@@ -4,6 +4,7 @@ export interface ModelConfig {
   provider: string;
   model: string;
   apiKey: string;
+  baseURL?: string;
   maxTokens?: number;
   temperature?: number;
   supportsThinking?: boolean;
