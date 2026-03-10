@@ -32,6 +32,10 @@ tools:
     enabled: true
   - name: "write_file"
     enabled: true
+  - name: "bash_exec"
+    enabled: true
+  - name: "python_exec"
+    enabled: true
 
 memory:
   enabled: true
@@ -47,3 +51,19 @@ subagents:
 
 skills:
   enabled: true
+
+mcp:
+  enabled: true
+  configPath: "mcp_servers.json"
+
+sandbox:
+  enabled: true
+  provider: "local"
+  timeoutMs: 30000
+  maxOutputSize: 65536
+  allowedCommands: []
+  blockedCommands: ["rm -rf /", "shutdown", "reboot"]
+
+checkpointer:
+  provider: "sqlite"
+  path: "data/checkpoints.db"

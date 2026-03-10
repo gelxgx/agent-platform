@@ -36,6 +36,25 @@ export interface SkillsConfig {
   path?: string;
 }
 
+export interface McpConfig {
+  enabled: boolean;
+  configPath?: string;
+}
+
+export interface SandboxConfig {
+  enabled: boolean;
+  provider: "local" | "docker";
+  timeoutMs: number;
+  maxOutputSize: number;
+  allowedCommands: string[];
+  blockedCommands: string[];
+}
+
+export interface CheckpointerConfig {
+  provider: "memory" | "sqlite";
+  path?: string;
+}
+
 export interface AppConfig {
   models: ModelConfig[];
   tools: ToolConfig[];
@@ -43,4 +62,7 @@ export interface AppConfig {
   memory?: MemoryConfig;
   subagents?: SubagentsConfig;
   skills?: SkillsConfig;
+  mcp?: McpConfig;
+  sandbox?: SandboxConfig;
+  checkpointer?: CheckpointerConfig;
 }

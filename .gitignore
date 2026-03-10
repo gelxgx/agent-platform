@@ -4,3 +4,8 @@ dist/
 data/
 *.log
 docs/plans/
+
+# SQLite checkpoint databases
+data/checkpoints.db
+data/checkpoints.db-wal
+data/checkpoints.db-shm

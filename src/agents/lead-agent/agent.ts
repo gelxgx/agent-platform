@@ -1,15 +1,12 @@
-import {
-  StateGraph,
-  START,
-  END,
-  MemorySaver,
-} from "@langchain/langgraph";
+import { StateGraph, START, END } from "@langchain/langgraph";
+import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { AIMessage } from "@langchain/core/messages";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage } from "@langchain/core/messages";
 import { AgentState, type AgentStateType } from "../thread-state.js";
 import { buildSystemPrompt } from "./prompt.js";
-import { getAvailableTools } from "../../tools/registry.js";
+import { getAllTools } from "../../tools/registry.js";
+import { getMcpTools } from "../../mcp/client.js";
 import { createChatModel } from "../../models/factory.js";
 import { createDefaultMiddlewareChain } from "../middlewares/index.js";
 import type { RuntimeConfig } from "../middlewares/types.js";
@@ -35,7 +32,7 @@ export async function createLeadAgent(modelName?: string) {
   const skillsEnabled = config.skills?.enabled ?? true;
 
   const model = await createChatModel(modelName);
-  const tools = getAvailableTools();
+  const tools = getAllTools();
 
   if (subagentEnabled) {
     tools.push(createTaskTool(modelName));
@@ -58,11 +55,15 @@ export async function createLeadAgent(modelName?: string) {
       await middlewareChain.runBeforeModel(state, runtimeConfig);
 
     const memoryContext = (beforeUpdates as any)?._memoryContext;
+    const sandboxContext = (beforeUpdates as any)?._sandboxContext;
+    const mcpToolNames = getMcpTools().map((t) => t.name);
     const systemMessage = new SystemMessage(
       buildSystemPrompt({
         memory: memoryContext,
         skills,
         subagentEnabled,
+        mcpToolNames: mcpToolNames.length > 0 ? mcpToolNames : undefined,
+        sandboxContext,
       })
     );
 
@@ -74,7 +75,7 @@ export async function createLeadAgent(modelName?: string) {
     const { response: processedResponse, stateUpdates: afterUpdates } =
       await middlewareChain.runAfterModel(state, response, runtimeConfig);
 
-    const { _memoryContext, ...cleanBeforeUpdates } = (beforeUpdates ?? {}) as any;
+    const { _memoryContext, _sandboxContext, ...cleanBeforeUpdates } = (beforeUpdates ?? {}) as any;
 
     return {
       messages: [processedResponse],
@@ -83,7 +84,9 @@ export async function createLeadAgent(modelName?: string) {
     };
   }
 
-  const checkpointer = new MemorySaver();
+  const cpConfig = config.checkpointer;
+  const dbPath = cpConfig?.path ?? "data/checkpoints.db";
+  const checkpointer = SqliteSaver.fromConnString(dbPath);
 
   const graph = new StateGraph(AgentState)
     .addNode("callModel", callModel)
