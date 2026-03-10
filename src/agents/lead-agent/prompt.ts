@@ -1,10 +1,17 @@
 import type { MemoryData } from "../../memory/types.js";
 import type { SkillMeta } from "../../skills/types.js";
 
+export interface SandboxContext {
+  workspace: string;
+  files: string[];
+}
+
 export interface PromptOptions {
   memory?: MemoryData;
   skills?: SkillMeta[];
   subagentEnabled?: boolean;
+  mcpToolNames?: string[];
+  sandboxContext?: SandboxContext;
 }
 
 export function buildSystemPrompt(options?: PromptOptions): string {
@@ -41,6 +48,14 @@ You have access to tools that allow you to:
 
   if (options?.skills?.length) {
     prompt += buildSkillsSection(options.skills);
+  }
+
+  if (options?.mcpToolNames?.length) {
+    prompt += buildMcpSection(options.mcpToolNames);
+  }
+
+  if (options?.sandboxContext) {
+    prompt += buildSandboxSection(options.sandboxContext);
   }
 
   if (options?.memory) {
@@ -100,4 +115,24 @@ function buildMemorySection(memory: MemoryData): string {
 
   parts.push("</memory>");
   return parts.join("\n");
+}
+
+function buildMcpSection(toolNames: string[]): string {
+  return `\n\n## External Tools (MCP)\n\nThe following tools are provided by external MCP servers:\n${toolNames.map((n) => `- ${n}`).join("\n")}\n\nThese tools work the same as built-in tools. Use them when relevant to the task.`;
+}
+
+function buildSandboxSection(ctx: SandboxContext): string {
+  let section = `\n\n## Sandbox Environment
+
+You have access to a sandboxed workspace for code execution.
+- Working directory: \`${ctx.workspace}\`
+- Use \`bash_exec\` to run shell commands
+- Use \`python_exec\` to run Python code
+- All file paths are relative to the workspace`;
+
+  if (ctx.files.length > 0) {
+    section += `\n\nCurrent workspace contents:\n${ctx.files.map((f) => `- ${f}`).join("\n")}`;
+  }
+
+  return section;
 }

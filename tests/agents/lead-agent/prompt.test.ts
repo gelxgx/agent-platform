@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildSystemPrompt } from "../../../src/agents/lead-agent/prompt.js";
 import type { MemoryData } from "../../../src/memory/types.js";
+import type { SandboxContext } from "../../../src/agents/lead-agent/prompt.js";
 
 describe("buildSystemPrompt", () => {
   it("should return base prompt without memory", () => {
@@ -49,5 +50,43 @@ describe("buildSystemPrompt", () => {
     const prompt = buildSystemPrompt({ memory });
     const factLines = prompt.split("\n").filter((l) => l.startsWith("- Fact"));
     expect(factLines.length).toBeLessThanOrEqual(15);
+  });
+
+  it("should include MCP tool names when provided", () => {
+    const prompt = buildSystemPrompt({
+      mcpToolNames: ["mcp_filesystem_read", "mcp_github_search"],
+    });
+    expect(prompt).toContain("External Tools (MCP)");
+    expect(prompt).toContain("mcp_filesystem_read");
+    expect(prompt).toContain("mcp_github_search");
+  });
+
+  it("should not include MCP section when no tools provided", () => {
+    const prompt = buildSystemPrompt({});
+    expect(prompt).not.toContain("External Tools (MCP)");
+  });
+
+  it("should include sandbox section when context provided", () => {
+    const sandboxContext: SandboxContext = {
+      workspace: "/workspace",
+      files: ["main.py", "README.md"],
+    };
+    const prompt = buildSystemPrompt({ sandboxContext });
+    expect(prompt).toContain("Sandbox Environment");
+    expect(prompt).toContain("`/workspace`");
+    expect(prompt).toContain("bash_exec");
+    expect(prompt).toContain("python_exec");
+    expect(prompt).toContain("main.py");
+    expect(prompt).toContain("README.md");
+  });
+
+  it("should not include workspace contents when files list is empty", () => {
+    const sandboxContext: SandboxContext = {
+      workspace: "/workspace",
+      files: [],
+    };
+    const prompt = buildSystemPrompt({ sandboxContext });
+    expect(prompt).toContain("Sandbox Environment");
+    expect(prompt).not.toContain("Current workspace contents");
   });
 });

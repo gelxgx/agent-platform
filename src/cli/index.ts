@@ -4,6 +4,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { createLeadAgent } from "../agents/lead-agent/agent.js";
 import { loadConfig } from "../config/loader.js";
 import { handleCommand } from "./commands.js";
+import { initializeMcpClient, closeMcpClient } from "../mcp/client.js";
 
 const COLORS = {
   reset: "\x1b[0m",
@@ -26,6 +27,16 @@ export async function startCli() {
   console.log(`${COLORS.dim}Model: ${currentModel} | Thread: ${threadId.slice(0, 8)}...${COLORS.reset}`);
   console.log(`${COLORS.dim}Type /help for commands${COLORS.reset}\n`);
 
+  if (config.mcp?.enabled) {
+    try {
+      await initializeMcpClient(config.mcp.configPath);
+    } catch (e) {
+      console.warn(
+        `${COLORS.yellow}[MCP] Failed to initialize: ${e instanceof Error ? e.message : String(e)}${COLORS.reset}`
+      );
+    }
+  }
+
   let agent = await createLeadAgent(currentModel);
 
   const rl = readline.createInterface({
@@ -45,6 +56,7 @@ export async function startCli() {
       if (cmdResult.handled) {
         if (cmdResult.shouldQuit) {
           console.log(cmdResult.output);
+          await closeMcpClient();
           rl.close();
           process.exit(0);
         }
@@ -95,6 +107,34 @@ export async function startCli() {
             }
           } catch {
             console.log(`${COLORS.yellow}Failed to load memory${COLORS.reset}\n`);
+          }
+          prompt();
+          return;
+        }
+        if (cmdResult.output === "SHOW_MCP") {
+          try {
+            const { listMcpServers, getMcpTools } = await import("../mcp/client.js");
+            const servers = listMcpServers();
+            const tools = getMcpTools();
+
+            if (servers.length === 0) {
+              console.log(`${COLORS.dim}No MCP servers configured.${COLORS.reset}`);
+              console.log(`${COLORS.dim}Edit mcp_servers.json to add servers.${COLORS.reset}\n`);
+            } else {
+              console.log(`${COLORS.cyan}=== MCP Servers ===${COLORS.reset}`);
+              for (const server of servers) {
+                const status = server.enabled !== false ? "✓" : "✗";
+                console.log(
+                  `  ${status} ${server.name} (${server.transport}: ${server.url ?? server.command})`
+                );
+              }
+              if (tools.length > 0) {
+                console.log(`\n  Tools loaded: ${tools.map((t) => t.name).join(", ")}`);
+              }
+              console.log();
+            }
+          } catch {
+            console.log(`${COLORS.yellow}Failed to load MCP info${COLORS.reset}\n`);
           }
           prompt();
           return;
@@ -162,6 +202,16 @@ export async function startCli() {
       prompt();
     });
   };
+
+  const cleanup = async () => {
+    await closeMcpClient();
+  };
+
+  rl.on("close", cleanup);
+  process.on("SIGINT", async () => {
+    await cleanup();
+    process.exit(0);
+  });
 
   prompt();
 }

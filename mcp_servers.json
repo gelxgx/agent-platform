@@ -1,0 +1,17 @@
+{
+  "servers": [
+    {
+      "name": "filesystem",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./data"],
+      "enabled": false
+    },
+    {
+      "name": "custom-api",
+      "transport": "http",
+      "url": "http://localhost:8000/mcp",
+      "enabled": false
+    }
+  ]
+}

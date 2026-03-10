@@ -30,5 +30,5 @@ registerSubAgent({
 Your primary tool is bash command execution.
 Execute commands carefully, check results, and return structured output.
 Do NOT ask for clarification — work with what you have.`,
-  allowedTools: ["read_file", "write_file"],
+  allowedTools: ["read_file", "write_file", "bash_exec"],
 });

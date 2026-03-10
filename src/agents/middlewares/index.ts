@@ -11,6 +11,7 @@ import { danglingToolCallMiddleware } from "./dangling-tool-call.js";
 import { titleMiddleware } from "./title.js";
 import { subagentLimitMiddleware } from "./subagent-limit.js";
 import { createMemoryMiddleware } from "../../memory/middleware.js";
+import { sandboxMiddleware } from "../../sandbox/middleware.js";
 import { loadConfig } from "../../config/loader.js";
 import { DEFAULT_MEMORY_CONFIG } from "../../memory/types.js";
 
@@ -31,6 +32,7 @@ export function createDefaultMiddlewareChain(): MiddlewareChain {
     .register(threadDataMiddleware)
     .register(danglingToolCallMiddleware)
     .register(createMemoryMiddleware(memConfig))
+    .register(sandboxMiddleware)
     .register(subagentLimitMiddleware)
     .register(titleMiddleware);
 }

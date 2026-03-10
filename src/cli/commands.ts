@@ -46,6 +46,10 @@ export function handleCommand(input: string): CommandResult {
       return { handled: true, output: "SHOW_SKILLS" };
     }
 
+    case "mcp": {
+      return { handled: true, output: "SHOW_MCP" };
+    }
+
     case "help":
       return {
         handled: true,
@@ -56,6 +60,7 @@ export function handleCommand(input: string): CommandResult {
           "  /model <n>   - Switch model",
           "  /memory      - Show stored memory",
           "  /skills      - List available skills",
+          "  /mcp         - List MCP server connections",
           "  /help        - Show this help",
           "  /quit        - Exit",
         ].join("\n"),
