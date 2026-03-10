@@ -16,8 +16,20 @@ export interface ToolConfig {
   enabled: boolean;
 }
 
+export interface MemoryConfig {
+  enabled: boolean;
+  injectionEnabled: boolean;
+  storagePath: string;
+  debounceSeconds: number;
+  modelName?: string;
+  maxFacts: number;
+  factConfidenceThreshold: number;
+  maxInjectionFacts: number;
+}
+
 export interface AppConfig {
   models: ModelConfig[];
   tools: ToolConfig[];
   defaultModel: string;
+  memory?: MemoryConfig;
 }

@@ -32,3 +32,12 @@ tools:
     enabled: true
   - name: "write_file"
     enabled: true
+
+memory:
+  enabled: true
+  injectionEnabled: true
+  storagePath: "data/memory.json"
+  debounceSeconds: 30
+  maxFacts: 100
+  factConfidenceThreshold: 0.7
+  maxInjectionFacts: 15

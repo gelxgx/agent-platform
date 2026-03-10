@@ -66,6 +66,39 @@ export async function startCli() {
           prompt();
           return;
         }
+        if (cmdResult.output === "SHOW_MEMORY") {
+          try {
+            const { MemoryStore } = await import("../memory/store.js");
+            const { loadConfig: lc } = await import("../config/loader.js");
+            const cfg = lc();
+            const store = new MemoryStore(cfg.memory);
+            const data = store.load();
+
+            if (!data.facts.length && !data.userContext.workContext) {
+              console.log(`${COLORS.dim}No memories stored yet.${COLORS.reset}\n`);
+            } else {
+              console.log(`${COLORS.cyan}=== Memory ===${COLORS.reset}`);
+              const ctx = data.userContext;
+              if (ctx.workContext) console.log(`  Work: ${ctx.workContext}`);
+              if (ctx.personalContext) console.log(`  Personal: ${ctx.personalContext}`);
+              if (ctx.topOfMind) console.log(`  Focus: ${ctx.topOfMind}`);
+              if (data.facts.length) {
+                console.log(`\n  Facts (${data.facts.length}):`);
+                data.facts
+                  .sort((a, b) => b.confidence - a.confidence)
+                  .slice(0, 10)
+                  .forEach((f) => {
+                    console.log(`    [${f.confidence.toFixed(1)}] ${f.content}`);
+                  });
+              }
+              console.log();
+            }
+          } catch {
+            console.log(`${COLORS.yellow}Failed to load memory${COLORS.reset}\n`);
+          }
+          prompt();
+          return;
+        }
         console.log(cmdResult.output + "\n");
         prompt();
         return;

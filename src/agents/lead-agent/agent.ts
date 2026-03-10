@@ -41,7 +41,11 @@ export async function createLeadAgent(modelName?: string) {
     const { messages: processedMessages, stateUpdates: beforeUpdates } =
       await middlewareChain.runBeforeModel(state, runtimeConfig);
 
-    const systemMessage = new SystemMessage(buildSystemPrompt());
+    const memoryContext = (beforeUpdates as any)?._memoryContext;
+    const systemMessage = new SystemMessage(
+      buildSystemPrompt({ memory: memoryContext })
+    );
+
     const response = await modelWithTools.invoke([
       systemMessage,
       ...processedMessages,
@@ -50,9 +54,11 @@ export async function createLeadAgent(modelName?: string) {
     const { response: processedResponse, stateUpdates: afterUpdates } =
       await middlewareChain.runAfterModel(state, response, runtimeConfig);
 
+    const { _memoryContext, ...cleanBeforeUpdates } = (beforeUpdates ?? {}) as any;
+
     return {
       messages: [processedResponse],
-      ...beforeUpdates,
+      ...cleanBeforeUpdates,
       ...afterUpdates,
     };
   }
