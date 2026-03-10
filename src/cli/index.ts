@@ -131,7 +131,10 @@ export async function startCli() {
             messages: [new HumanMessage(input)],
             threadId,
           },
-          { streamMode: "messages" }
+          {
+            streamMode: "messages",
+            configurable: { thread_id: threadId },
+          }
         );
 
         for await (const [message, _metadata] of stream) {

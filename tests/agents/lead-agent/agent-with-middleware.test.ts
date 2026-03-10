@@ -34,10 +34,13 @@ describe("Lead Agent with Middleware", () => {
     );
     const agent = await createLeadAgent();
 
-    const result = await agent.invoke({
-      messages: [new HumanMessage("Just say hi in one word.")],
-      threadId: TEST_THREAD_ID,
-    });
+    const result = await agent.invoke(
+      {
+        messages: [new HumanMessage("Just say hi in one word.")],
+        threadId: TEST_THREAD_ID,
+      },
+      { configurable: { thread_id: TEST_THREAD_ID } }
+    );
 
     expect(result.messages.length).toBeGreaterThan(1);
     expect(fs.existsSync(path.join(THREAD_DIR, "workspace"))).toBe(true);

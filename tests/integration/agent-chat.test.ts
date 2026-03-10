@@ -14,10 +14,13 @@ describe("Agent Chat Integration", () => {
       "../../src/agents/lead-agent/agent.js"
     );
     const agent = await createLeadAgent();
-    const result = await agent.invoke({
-      messages: [new HumanMessage("Hello! Just say 'Hi' back in one word.")],
-      threadId: "test-thread",
-    });
+    const result = await agent.invoke(
+      {
+        messages: [new HumanMessage("Hello! Just say 'Hi' back in one word.")],
+        threadId: "test-thread",
+      },
+      { configurable: { thread_id: "test-thread" } }
+    );
     expect(result.messages.length).toBeGreaterThan(1);
     const lastMessage = result.messages.at(-1);
     expect(lastMessage?.content).toBeDefined();

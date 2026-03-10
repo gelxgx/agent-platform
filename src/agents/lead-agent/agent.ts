@@ -2,6 +2,7 @@ import {
   StateGraph,
   START,
   END,
+  MemorySaver,
 } from "@langchain/langgraph";
 import { AIMessage } from "@langchain/core/messages";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
@@ -82,13 +83,15 @@ export async function createLeadAgent(modelName?: string) {
     };
   }
 
+  const checkpointer = new MemorySaver();
+
   const graph = new StateGraph(AgentState)
     .addNode("callModel", callModel)
     .addNode("tools", toolNode)
     .addEdge(START, "callModel")
     .addConditionalEdges("callModel", shouldContinue, ["tools", END])
     .addEdge("tools", "callModel")
-    .compile();
+    .compile({ checkpointer });
 
   return graph;
 }
