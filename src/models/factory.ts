@@ -11,7 +11,14 @@ export function registerProvider(name: string, factory: ProviderFactory): void {
   PROVIDER_MAP[name] = factory;
 }
 
-export async function createChatModel(name?: string): Promise<BaseChatModel> {
+export interface CreateModelOptions {
+  streaming?: boolean;
+}
+
+export async function createChatModel(
+  name?: string,
+  options?: CreateModelOptions
+): Promise<BaseChatModel> {
   const modelName = name ?? getDefaultModelName();
   const config = getModelConfig(modelName);
 
@@ -30,7 +37,7 @@ export async function createChatModel(name?: string): Promise<BaseChatModel> {
     apiKey: config.apiKey,
     maxTokens: config.maxTokens,
     temperature: config.temperature,
-    streaming: true,
+    streaming: options?.streaming ?? true,
     maxRetries: 2,
     timeout: 60000,
   };

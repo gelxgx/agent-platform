@@ -65,7 +65,9 @@ export class MemoryUpdater {
     currentMemory: MemoryData
   ): Promise<ExtractionResult | null> {
     try {
-      const model = await createChatModel(this.config.modelName ?? undefined);
+      const model = await createChatModel(this.config.modelName ?? undefined, {
+        streaming: false,
+      });
 
       const prompt = MEMORY_EXTRACTION_PROMPT
         .replace("{CURRENT_MEMORY}", JSON.stringify(currentMemory, null, 2))
