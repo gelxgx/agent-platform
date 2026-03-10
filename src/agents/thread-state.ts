@@ -11,6 +11,12 @@ export interface Artifact {
   createdAt: string;
 }
 
+export interface ThreadData {
+  workspacePath: string;
+  uploadsPath: string;
+  outputsPath: string;
+}
+
 function mergeArtifacts(
   existing: Artifact[],
   updates: Artifact[]
@@ -35,6 +41,10 @@ export const AgentState = Annotation.Root({
   artifacts: Annotation<Artifact[]>({
     reducer: mergeArtifacts,
     default: () => [],
+  }),
+  threadData: Annotation<ThreadData | undefined>({
+    reducer: (_prev, next) => next,
+    default: () => undefined,
   }),
 });
 
