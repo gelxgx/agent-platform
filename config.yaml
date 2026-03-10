@@ -1,0 +1,32 @@
+defaultModel: "gpt-4o"
+
+models:
+  - name: "gpt-4o"
+    displayName: "GPT-4o"
+    provider: "openai"
+    model: "gpt-4o"
+    apiKey: "$OPENAI_API_KEY"
+    maxTokens: 4096
+    temperature: 0.7
+    supportsThinking: false
+    supportsVision: true
+
+  - name: "gpt-4o-mini"
+    displayName: "GPT-4o Mini"
+    provider: "openai"
+    model: "gpt-4o-mini"
+    apiKey: "$OPENAI_API_KEY"
+    maxTokens: 4096
+    temperature: 0.7
+    supportsThinking: false
+    supportsVision: true
+
+tools:
+  - name: "web_search"
+    enabled: true
+  - name: "web_fetch"
+    enabled: true
+  - name: "read_file"
+    enabled: true
+  - name: "write_file"
+    enabled: true
