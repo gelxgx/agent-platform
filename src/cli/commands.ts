@@ -42,6 +42,10 @@ export function handleCommand(input: string): CommandResult {
       return { handled: true, output: "SHOW_MEMORY" };
     }
 
+    case "skills": {
+      return { handled: true, output: "SHOW_SKILLS" };
+    }
+
     case "help":
       return {
         handled: true,
@@ -51,6 +55,7 @@ export function handleCommand(input: string): CommandResult {
           "  /models      - List available models",
           "  /model <n>   - Switch model",
           "  /memory      - Show stored memory",
+          "  /skills      - List available skills",
           "  /help        - Show this help",
           "  /quit        - Exit",
         ].join("\n"),

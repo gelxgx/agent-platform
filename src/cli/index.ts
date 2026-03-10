@@ -99,6 +99,26 @@ export async function startCli() {
           prompt();
           return;
         }
+        if (cmdResult.output === "SHOW_SKILLS") {
+          try {
+            const { loadSkills: ls } = await import("../skills/loader.js");
+            const skills = ls();
+            if (skills.length === 0) {
+              console.log(`${COLORS.dim}No skills found.${COLORS.reset}\n`);
+            } else {
+              console.log(`${COLORS.cyan}=== Skills ===${COLORS.reset}`);
+              for (const skill of skills) {
+                const status = skill.enabled ? "✓" : "✗";
+                console.log(`  ${status} ${skill.name} — ${skill.description}`);
+              }
+              console.log();
+            }
+          } catch {
+            console.log(`${COLORS.yellow}Failed to load skills${COLORS.reset}\n`);
+          }
+          prompt();
+          return;
+        }
         console.log(cmdResult.output + "\n");
         prompt();
         return;
