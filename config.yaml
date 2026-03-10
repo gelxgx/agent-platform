@@ -41,3 +41,9 @@ memory:
   maxFacts: 100
   factConfidenceThreshold: 0.7
   maxInjectionFacts: 15
+
+subagents:
+  enabled: true
+
+skills:
+  enabled: true

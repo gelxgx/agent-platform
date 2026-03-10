@@ -1,7 +1,10 @@
 import type { MemoryData } from "../../memory/types.js";
+import type { SkillMeta } from "../../skills/types.js";
 
 export interface PromptOptions {
   memory?: MemoryData;
+  skills?: SkillMeta[];
+  subagentEnabled?: boolean;
 }
 
 export function buildSystemPrompt(options?: PromptOptions): string {
@@ -15,7 +18,13 @@ Current time: ${now}
 You have access to tools that allow you to:
 - Search the web for real-time information
 - Fetch web page content
-- Read and write files on the local filesystem
+- Read and write files on the local filesystem`;
+
+  if (options?.subagentEnabled) {
+    prompt += `\n- Delegate complex sub-tasks to specialized agents via the "task" tool`;
+  }
+
+  prompt += `
 
 ## Guidelines
 
@@ -26,11 +35,45 @@ You have access to tools that allow you to:
 5. If you're unsure about something, say so rather than guessing.
 6. Think step by step for complex tasks.`;
 
+  if (options?.subagentEnabled) {
+    prompt += buildSubagentSection();
+  }
+
+  if (options?.skills?.length) {
+    prompt += buildSkillsSection(options.skills);
+  }
+
   if (options?.memory) {
     prompt += buildMemorySection(options.memory);
   }
 
   return prompt;
+}
+
+function buildSubagentSection(): string {
+  return `
+
+## Task Delegation
+
+You can delegate sub-tasks to specialized agents using the "task" tool.
+Use delegation when:
+- A task has clearly separable sub-parts that can be worked on independently
+- A sub-task requires focused, deep work (e.g. researching one specific topic)
+- Multiple sub-tasks can be executed in parallel
+
+Do NOT delegate when:
+- The task is simple enough to handle directly
+- The task requires back-and-forth with the user
+- Sub-tasks are tightly dependent on each other`;
+}
+
+function buildSkillsSection(skills: SkillMeta[]): string {
+  const parts: string[] = ["\n\n## Available Skills"];
+  parts.push("The following skills are available. Reference them when the task matches their domain:\n");
+  for (const skill of skills) {
+    parts.push(`- **${skill.name}**: ${skill.description}`);
+  }
+  return parts.join("\n");
 }
 
 function buildMemorySection(memory: MemoryData): string {

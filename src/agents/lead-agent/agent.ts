@@ -12,6 +12,9 @@ import { getAvailableTools } from "../../tools/registry.js";
 import { createChatModel } from "../../models/factory.js";
 import { createDefaultMiddlewareChain } from "../middlewares/index.js";
 import type { RuntimeConfig } from "../middlewares/types.js";
+import { createTaskTool } from "../../subagents/task-tool.js";
+import { loadSkills } from "../../skills/loader.js";
+import { loadConfig } from "../../config/loader.js";
 
 function shouldContinue(state: AgentStateType): "tools" | typeof END {
   const lastMessage = state.messages.at(-1);
@@ -26,16 +29,28 @@ function shouldContinue(state: AgentStateType): "tools" | typeof END {
 }
 
 export async function createLeadAgent(modelName?: string) {
+  const config = loadConfig();
+  const subagentEnabled = config.subagents?.enabled ?? false;
+  const skillsEnabled = config.skills?.enabled ?? true;
+
   const model = await createChatModel(modelName);
   const tools = getAvailableTools();
+
+  if (subagentEnabled) {
+    tools.push(createTaskTool(modelName));
+  }
+
   const modelWithTools = model.bindTools!(tools);
   const toolNode = new ToolNode(tools);
   const middlewareChain = createDefaultMiddlewareChain();
+
+  const skills = skillsEnabled ? loadSkills() : [];
 
   async function callModel(state: AgentStateType) {
     const runtimeConfig: RuntimeConfig = {
       modelName: modelName ?? "default",
       threadId: state.threadId,
+      subagentEnabled,
     };
 
     const { messages: processedMessages, stateUpdates: beforeUpdates } =
@@ -43,7 +58,11 @@ export async function createLeadAgent(modelName?: string) {
 
     const memoryContext = (beforeUpdates as any)?._memoryContext;
     const systemMessage = new SystemMessage(
-      buildSystemPrompt({ memory: memoryContext })
+      buildSystemPrompt({
+        memory: memoryContext,
+        skills,
+        subagentEnabled,
+      })
     );
 
     const response = await modelWithTools.invoke([

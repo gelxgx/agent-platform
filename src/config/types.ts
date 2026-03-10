@@ -27,9 +27,20 @@ export interface MemoryConfig {
   maxInjectionFacts: number;
 }
 
+export interface SubagentsConfig {
+  enabled: boolean;
+}
+
+export interface SkillsConfig {
+  enabled: boolean;
+  path?: string;
+}
+
 export interface AppConfig {
   models: ModelConfig[];
   tools: ToolConfig[];
   defaultModel: string;
   memory?: MemoryConfig;
+  subagents?: SubagentsConfig;
+  skills?: SkillsConfig;
 }
