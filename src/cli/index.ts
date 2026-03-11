@@ -12,6 +12,7 @@ const COLORS = {
   green: "\x1b[32m",
   cyan: "\x1b[36m",
   yellow: "\x1b[33m",
+  magenta: "\x1b[35m",
 };
 
 function log(color: string, text: string) {
@@ -166,6 +167,7 @@ export async function startCli() {
 
       try {
         log(COLORS.cyan, "Agent: ");
+        let fullOutput = "";
         const stream = await agent.stream(
           {
             messages: [new HumanMessage(input)],
@@ -181,17 +183,26 @@ export async function startCli() {
           if (!message.content) continue;
           if (typeof message.content === "string") {
             process.stdout.write(message.content);
+            fullOutput += message.content;
           } else if (Array.isArray(message.content)) {
             for (const block of message.content) {
               if (typeof block === "string") {
                 process.stdout.write(block);
+                fullOutput += block;
               } else if (block && typeof block === "object" && "text" in block) {
-                process.stdout.write((block as { text: string }).text);
+                const text = (block as { text: string }).text;
+                process.stdout.write(text);
+                fullOutput += text;
               }
             }
           }
         }
-        process.stdout.write("\n\n");
+        process.stdout.write("\n");
+
+        if (fullOutput.includes("[CLARIFICATION_NEEDED]")) {
+          log(COLORS.magenta, "  ↳ The agent needs more information. Please reply to continue.\n");
+        }
+        process.stdout.write("\n");
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         console.log(

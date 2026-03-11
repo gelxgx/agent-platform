@@ -1,25 +1,25 @@
-import { MultiServerMCPClient } from "@langchain/mcp-adapters";
-import type { StructuredToolInterface } from "@langchain/core/tools";
-import type { McpServerConfig } from "./types.js";
-import fs from "node:fs";
-import path from "node:path";
+import { MultiServerMCPClient } from '@langchain/mcp-adapters';
+import type { StructuredToolInterface } from '@langchain/core/tools';
+import type { McpServerConfig } from './types.js';
+import fs from 'node:fs';
+import path from 'node:path';
 
 let clientInstance: MultiServerMCPClient | null = null;
 let cachedTools: StructuredToolInterface[] = [];
 
 function resolveEnvValue(value: string): string {
-  if (value.startsWith("$")) {
-    return process.env[value.slice(1)] ?? "";
+  if (value.startsWith('$')) {
+    return process.env[value.slice(1)] ?? '';
   }
   return value;
 }
 
 function resolveEnvInRecord(
-  record?: Record<string, string>
+  record?: Record<string, string>,
 ): Record<string, string> | undefined {
   if (!record) return undefined;
   return Object.fromEntries(
-    Object.entries(record).map(([k, v]) => [k, resolveEnvValue(v)])
+    Object.entries(record).map(([k, v]) => [k, resolveEnvValue(v)]),
   );
 }
 
@@ -28,10 +28,10 @@ function resolveEnvInRecord(
  * Returns only enabled servers.
  */
 export function loadMcpServerConfigs(configPath?: string): McpServerConfig[] {
-  const filePath = path.resolve(configPath ?? "mcp_servers.json");
+  const filePath = path.resolve(configPath ?? 'mcp_servers.json');
   if (!fs.existsSync(filePath)) return [];
 
-  const raw = fs.readFileSync(filePath, "utf-8");
+  const raw = fs.readFileSync(filePath, 'utf-8');
   const parsed = JSON.parse(raw) as { servers?: McpServerConfig[] };
   if (!parsed.servers || !Array.isArray(parsed.servers)) return [];
 
@@ -50,20 +50,25 @@ export function loadMcpServerConfigs(configPath?: string): McpServerConfig[] {
 function buildClientConfig(servers: McpServerConfig[]) {
   const config: Record<
     string,
-    | { transport: "stdio"; command: string; args: string[]; env?: Record<string, string> }
-    | { transport: "http"; url: string; headers?: Record<string, string> }
+    | {
+        transport: 'stdio';
+        command: string;
+        args: string[];
+        env?: Record<string, string>;
+      }
+    | { transport: 'http'; url: string; headers?: Record<string, string> }
   > = {};
   for (const server of servers) {
-    if (server.transport === "stdio") {
+    if (server.transport === 'stdio') {
       config[server.name] = {
-        transport: "stdio",
+        transport: 'stdio',
         command: server.command!,
         args: server.args ?? [],
         env: server.env,
       };
-    } else if (server.transport === "http") {
+    } else if (server.transport === 'http') {
       config[server.name] = {
-        transport: "http",
+        transport: 'http',
         url: server.url!,
         headers: server.headers,
       };
@@ -77,7 +82,7 @@ function buildClientConfig(servers: McpServerConfig[]) {
  * and return the tools they expose.
  */
 export async function initializeMcpClient(
-  configPath?: string
+  configPath?: string,
 ): Promise<StructuredToolInterface[]> {
   if (clientInstance) return cachedTools;
 
@@ -89,7 +94,7 @@ export async function initializeMcpClient(
 
   cachedTools = await clientInstance.getTools();
   console.log(
-    `[MCP] Connected to ${servers.length} server(s), loaded ${cachedTools.length} tool(s)`
+    `[MCP] Connected to ${servers.length} server(s), loaded ${cachedTools.length} tool(s)`,
   );
   return cachedTools;
 }
@@ -109,7 +114,7 @@ export async function closeMcpClient(): Promise<void> {
     await clientInstance.close();
     clientInstance = null;
     cachedTools = [];
-    console.log("[MCP] All connections closed");
+    console.log('[MCP] All connections closed');
   }
 }
 
@@ -117,10 +122,10 @@ export async function closeMcpClient(): Promise<void> {
  * List all configured MCP servers (including disabled ones).
  */
 export function listMcpServers(configPath?: string): McpServerConfig[] {
-  const filePath = path.resolve(configPath ?? "mcp_servers.json");
+  const filePath = path.resolve(configPath ?? 'mcp_servers.json');
   if (!fs.existsSync(filePath)) return [];
 
-  const raw = fs.readFileSync(filePath, "utf-8");
+  const raw = fs.readFileSync(filePath, 'utf-8');
   const parsed = JSON.parse(raw) as { servers?: McpServerConfig[] };
   return parsed.servers ?? [];
 }

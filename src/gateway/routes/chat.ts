@@ -33,6 +33,8 @@ chat.post("/", async (c) => {
       },
     );
 
+    let fullOutput = "";
+
     for await (const [message, _metadata] of result) {
       if (!message.content) continue;
       const text =
@@ -47,11 +49,20 @@ chat.post("/", async (c) => {
             : "";
 
       if (text) {
+        fullOutput += text;
         await stream.writeSSE({
           event: "token",
           data: JSON.stringify({ content: text }),
         });
       }
+    }
+
+    if (fullOutput.includes("[CLARIFICATION_NEEDED]")) {
+      const question = fullOutput.replace("[CLARIFICATION_NEEDED] ", "").trim();
+      await stream.writeSSE({
+        event: "clarification",
+        data: JSON.stringify({ question, threadId }),
+      });
     }
 
     await stream.writeSSE({

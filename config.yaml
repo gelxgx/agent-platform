@@ -36,6 +36,8 @@ tools:
     enabled: true
   - name: "python_exec"
     enabled: true
+  - name: "ask_clarification"
+    enabled: true
 
 memory:
   enabled: true
@@ -63,6 +65,11 @@ sandbox:
   maxOutputSize: 65536
   allowedCommands: []
   blockedCommands: ["rm -rf /", "shutdown", "reboot"]
+
+summarization:
+  enabled: true
+  maxTokenFraction: 0.7
+  keepRecentMessages: 6
 
 checkpointer:
   provider: "sqlite"

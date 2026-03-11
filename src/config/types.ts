@@ -7,6 +7,8 @@ export interface ModelConfig {
   baseURL?: string;
   maxTokens?: number;
   temperature?: number;
+  /** Model context window size (defaults to 128000 if not set) */
+  contextWindow?: number;
   supportsThinking?: boolean;
   supportsVision?: boolean;
 }
@@ -55,6 +57,16 @@ export interface CheckpointerConfig {
   path?: string;
 }
 
+export interface SummarizationConfig {
+  enabled: boolean;
+  /** Trigger compression when estimated tokens exceed this fraction of model maxTokens (0-1) */
+  maxTokenFraction: number;
+  /** Keep the most recent N original messages after compression */
+  keepRecentMessages: number;
+  /** Model used for generating summaries (null uses the default model) */
+  modelName?: string;
+}
+
 export interface GatewayConfig {
   enabled: boolean;
   port: number;
@@ -72,4 +84,5 @@ export interface AppConfig {
   sandbox?: SandboxConfig;
   checkpointer?: CheckpointerConfig;
   gateway?: GatewayConfig;
+  summarization?: SummarizationConfig;
 }

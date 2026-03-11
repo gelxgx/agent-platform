@@ -5,6 +5,7 @@ import { webFetchTool } from "./builtins/web-fetch.js";
 import { readFileTool, writeFileTool } from "./builtins/file-ops.js";
 import { bashExecTool } from "./builtins/bash-exec.js";
 import { pythonExecTool } from "./builtins/python-exec.js";
+import { askClarificationTool } from "./builtins/ask-clarification.js";
 import { getMcpTools } from "../mcp/client.js";
 
 const BUILTIN_TOOLS: Record<string, StructuredToolInterface> = {
@@ -14,6 +15,7 @@ const BUILTIN_TOOLS: Record<string, StructuredToolInterface> = {
   write_file: writeFileTool,
   bash_exec: bashExecTool,
   python_exec: pythonExecTool,
+  ask_clarification: askClarificationTool,
 };
 
 export function registerBuiltinTool(

@@ -1,4 +1,4 @@
-import { StateGraph, START, END, MemorySaver } from "@langchain/langgraph";
+import { StateGraph, START, END, MemorySaver, Command } from "@langchain/langgraph";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { AIMessage } from "@langchain/core/messages";
 import type { AppConfig } from "../../config/types.js";
@@ -90,11 +90,24 @@ export async function createLeadAgent(modelName?: string) {
       await middlewareChain.runAfterModel(state, response, runtimeConfig);
 
     const { _memoryContext, _sandboxContext, ...cleanBeforeUpdates } = (beforeUpdates ?? {}) as any;
+    const { _clarificationNeeded, ...cleanAfterUpdates } = (afterUpdates ?? {}) as any;
+
+    if (_clarificationNeeded) {
+      const clarificationMessage = new AIMessage(_clarificationNeeded.question);
+      return new Command({
+        goto: END,
+        update: {
+          messages: [clarificationMessage],
+          ...cleanBeforeUpdates,
+          ...cleanAfterUpdates,
+        },
+      });
+    }
 
     return {
       messages: [processedResponse],
       ...cleanBeforeUpdates,
-      ...afterUpdates,
+      ...cleanAfterUpdates,
     };
   }
 
