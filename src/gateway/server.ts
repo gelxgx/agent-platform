@@ -9,6 +9,8 @@ import { memory } from "./routes/memory.js";
 import { mcp } from "./routes/mcp.js";
 import { chat } from "./routes/chat.js";
 import { threads } from "./routes/threads.js";
+import { uploads } from "./routes/uploads.js";
+import { artifacts } from "./routes/artifacts.js";
 
 export function createGateway(corsOrigins?: string[]) {
   const app = new Hono();
@@ -31,6 +33,8 @@ export function createGateway(corsOrigins?: string[]) {
   app.route("/api/mcp", mcp);
   app.route("/api/chat", chat);
   app.route("/api/threads", threads);
+  app.route("/api/threads", uploads);
+  app.route("/api/threads", artifacts);
 
   app.onError((err, c) => {
     console.error("[Gateway Error]", err);

@@ -4,15 +4,18 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
+import { FileUpload, type FileUploadHandle } from "./FileUpload";
 
 interface ChatInputProps {
-  onSend: (message: string) => void;
+  onSend: (message: string, files?: string[]) => void;
   disabled?: boolean;
+  threadId?: string;
 }
 
-export function ChatInput({ onSend, disabled }: ChatInputProps) {
+export function ChatInput({ onSend, disabled, threadId }: ChatInputProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileUploadRef = useRef<FileUploadHandle>(null);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -25,8 +28,12 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   const handleSubmit = useCallback(() => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed);
+
+    const files = fileUploadRef.current?.getUploadedFiles() ?? [];
+    onSend(trimmed, files.length > 0 ? files : undefined);
+
     setValue("");
+    fileUploadRef.current?.clear();
   }, [value, disabled, onSend]);
 
   const handleKeyDown = useCallback(
@@ -41,6 +48,11 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
 
   return (
     <div className="px-4 md:px-8 pb-4 pt-2">
+      {threadId && (
+        <div className="max-w-3xl mx-auto mb-1">
+          <FileUpload ref={fileUploadRef} threadId={threadId} disabled={disabled} />
+        </div>
+      )}
       <div className="max-w-3xl mx-auto flex items-end gap-2 rounded-xl border border-border bg-card p-3 shadow-sm">
         <Textarea
           ref={textareaRef}

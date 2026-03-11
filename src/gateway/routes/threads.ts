@@ -69,6 +69,17 @@ threads.get("/:id/messages", async (c) => {
   }
 });
 
+threads.get("/:id/todos", async (c) => {
+  const id = c.req.param("id");
+  try {
+    const agent = await getAgent();
+    const state = await agent.getState({ configurable: { thread_id: id } });
+    return c.json({ todos: state?.values?.todos ?? [] });
+  } catch {
+    return c.json({ todos: [] });
+  }
+});
+
 threads.get("/:id/files", (c) => {
   const id = c.req.param("id");
   const workspace = path.join(THREADS_ROOT, id, "workspace");

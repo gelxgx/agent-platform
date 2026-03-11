@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useThreads } from "@/hooks/useThreads";
 import { fetchModels } from "@/lib/api";
-import { Menu } from "lucide-react";
+import { Menu, ListTodo } from "lucide-react";
 
 interface ModelInfo {
   name: string;
@@ -21,6 +21,7 @@ export default function Home() {
   const [activeThreadId, setActiveThreadId] = useState("");
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [currentModel, setCurrentModel] = useState("");
+  const [planMode, setPlanMode] = useState(false);
   const { threads, remove } = useThreads();
 
   useEffect(() => {
@@ -89,6 +90,15 @@ export default function Home() {
                 {currentModel}
               </Badge>
             )}
+            <Button
+              variant={planMode ? "default" : "outline"}
+              size="sm"
+              className="h-6 text-xs gap-1"
+              onClick={() => setPlanMode(!planMode)}
+            >
+              <ListTodo className="size-3" />
+              {planMode ? "Plan" : "Standard"}
+            </Button>
           </div>
           <ThemeToggle />
         </header>
@@ -98,6 +108,7 @@ export default function Home() {
             key={activeThreadId}
             threadId={activeThreadId}
             model={currentModel}
+            planMode={planMode}
           />
         </div>
       </main>

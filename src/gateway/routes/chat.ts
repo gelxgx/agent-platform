@@ -1,8 +1,63 @@
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { randomUUID } from "node:crypto";
-import { HumanMessage } from "@langchain/core/messages";
+import fs from "node:fs";
+import path from "node:path";
+import { HumanMessage, type ContentBlock } from "@langchain/core/messages";
 import { getAgent } from "../agent-cache.js";
+
+const THREADS_ROOT = path.resolve("data/threads");
+
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
+
+const MIME_MAP: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+};
+
+function buildHumanMessage(
+  text: string,
+  threadId: string,
+  files?: string[]
+): HumanMessage {
+  if (!files || files.length === 0) {
+    return new HumanMessage(text);
+  }
+
+  const uploadsDir = path.join(THREADS_ROOT, threadId, "uploads");
+  const imageBlocks: (ContentBlock | ContentBlock.Text)[] = [];
+
+  for (const filename of files) {
+    const ext = path.extname(filename).toLowerCase();
+    const filePath = path.join(uploadsDir, filename);
+
+    if (!fs.existsSync(filePath)) continue;
+
+    if (IMAGE_EXTENSIONS.has(ext)) {
+      const data = fs.readFileSync(filePath);
+      const base64 = data.toString("base64");
+      const mime = MIME_MAP[ext] ?? "image/png";
+      imageBlocks.push({
+        type: "image",
+        mimeType: mime,
+        data: base64,
+      } as ContentBlock.Multimodal.Image);
+    }
+  }
+
+  if (imageBlocks.length === 0) {
+    return new HumanMessage(text);
+  }
+
+  const content: (ContentBlock | ContentBlock.Text)[] = [
+    { type: "text", text } as ContentBlock.Text,
+    ...imageBlocks,
+  ];
+  return new HumanMessage({ content });
+}
 
 const chat = new Hono();
 
@@ -11,10 +66,13 @@ chat.post("/", async (c) => {
     message: string;
     threadId?: string;
     model?: string;
+    files?: string[];
+    planMode?: boolean;
   }>();
 
   const threadId = body.threadId ?? randomUUID();
   const agent = await getAgent(body.model);
+  const humanMessage = buildHumanMessage(body.message, threadId, body.files);
 
   return streamSSE(c, async (stream) => {
     await stream.writeSSE({
@@ -24,12 +82,12 @@ chat.post("/", async (c) => {
 
     const result = await agent.stream(
       {
-        messages: [new HumanMessage(body.message)],
+        messages: [humanMessage],
         threadId,
       },
       {
         streamMode: "messages",
-        configurable: { thread_id: threadId },
+        configurable: { thread_id: threadId, isPlanMode: body.planMode },
       },
     );
 
@@ -50,9 +108,10 @@ chat.post("/", async (c) => {
 
       if (text) {
         fullOutput += text;
+        const displayText = text.replace("[CLARIFICATION_NEEDED] ", "");
         await stream.writeSSE({
           event: "token",
-          data: JSON.stringify({ content: text }),
+          data: JSON.stringify({ content: displayText }),
         });
       }
     }
@@ -77,17 +136,20 @@ chat.post("/invoke", async (c) => {
     message: string;
     threadId?: string;
     model?: string;
+    files?: string[];
+    planMode?: boolean;
   }>();
 
   const threadId = body.threadId ?? randomUUID();
   const agent = await getAgent(body.model);
+  const humanMessage = buildHumanMessage(body.message, threadId, body.files);
 
   const result = await agent.invoke(
     {
-      messages: [new HumanMessage(body.message)],
+      messages: [humanMessage],
       threadId,
     },
-    { configurable: { thread_id: threadId } },
+    { configurable: { thread_id: threadId, isPlanMode: body.planMode } },
   );
 
   const lastMessage = result.messages.at(-1);

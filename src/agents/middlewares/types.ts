@@ -5,6 +5,7 @@ export interface RuntimeConfig {
   modelName: string;
   threadId: string;
   thinkingEnabled?: boolean;
+  isPlanMode?: boolean;
   [key: string]: unknown;
 }
 

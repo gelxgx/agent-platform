@@ -1,9 +1,10 @@
 import { StateGraph, START, END, MemorySaver, Command } from "@langchain/langgraph";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
-import { AIMessage } from "@langchain/core/messages";
+import { AIMessage, ToolMessage } from "@langchain/core/messages";
 import type { AppConfig } from "../../config/types.js";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage } from "@langchain/core/messages";
+import type { Artifact, TodoItem } from "../thread-state.js";
 import { AgentState, type AgentStateType } from "../thread-state.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { getAllTools } from "../../tools/registry.js";
@@ -52,16 +53,48 @@ export async function createLeadAgent(modelName?: string) {
   }
 
   const modelWithTools = model.bindTools!(tools);
-  const toolNode = new ToolNode(tools);
+  const rawToolNode = new ToolNode(tools);
   const middlewareChain = createDefaultMiddlewareChain();
+
+  async function toolsWithArtifacts(state: AgentStateType) {
+    const result = await rawToolNode.invoke(state);
+    const messages: ToolMessage[] = result.messages ?? [];
+    const extractedArtifacts: Artifact[] = [];
+    const extractedTodos: TodoItem[] = [];
+
+    for (const msg of messages) {
+      if (typeof msg.content !== "string") continue;
+      try {
+        const parsed = JSON.parse(msg.content);
+        if (Array.isArray(parsed?._artifacts)) {
+          extractedArtifacts.push(...parsed._artifacts);
+          msg.content = parsed.message ?? msg.content;
+        }
+        if (Array.isArray(parsed?._todos)) {
+          extractedTodos.push(...parsed._todos);
+          msg.content = `Updated task list (${parsed._todos.length} items).`;
+        }
+      } catch {
+        // not JSON, skip
+      }
+    }
+
+    return {
+      messages,
+      ...(extractedArtifacts.length > 0 && { artifacts: extractedArtifacts }),
+      ...(extractedTodos.length > 0 && { todos: extractedTodos }),
+    };
+  }
 
   const skills = skillsEnabled ? loadSkills(config.skills?.path) : [];
 
-  async function callModel(state: AgentStateType) {
+  async function callModel(state: AgentStateType, graphConfig?: any) {
+    const configurable = graphConfig?.configurable ?? {};
     const runtimeConfig: RuntimeConfig = {
       modelName: modelName ?? "default",
       threadId: state.threadId,
       subagentEnabled,
+      isPlanMode: configurable.isPlanMode ?? false,
     };
 
     const { messages: processedMessages, stateUpdates: beforeUpdates } =
@@ -69,6 +102,8 @@ export async function createLeadAgent(modelName?: string) {
 
     const memoryContext = (beforeUpdates as any)?._memoryContext;
     const sandboxContext = (beforeUpdates as any)?._sandboxContext;
+    const uploadedFiles = (beforeUpdates as any)?._uploadedFiles;
+    const todosContext = (beforeUpdates as any)?._todosContext;
     const mcpToolNames = getMcpTools().map((t) => t.name);
     const systemMessage = new SystemMessage(
       buildSystemPrompt({
@@ -77,7 +112,9 @@ export async function createLeadAgent(modelName?: string) {
         subagentEnabled,
         mcpToolNames: mcpToolNames.length > 0 ? mcpToolNames : undefined,
         sandboxContext,
+        uploadedFiles,
         maxInjectionFacts: config.memory?.maxInjectionFacts,
+        todos: todosContext,
       })
     );
 
@@ -89,11 +126,13 @@ export async function createLeadAgent(modelName?: string) {
     const { response: processedResponse, stateUpdates: afterUpdates } =
       await middlewareChain.runAfterModel(state, response, runtimeConfig);
 
-    const { _memoryContext, _sandboxContext, ...cleanBeforeUpdates } = (beforeUpdates ?? {}) as any;
+    const { _memoryContext, _sandboxContext, _uploadedFiles, _todosContext, ...cleanBeforeUpdates } = (beforeUpdates ?? {}) as any;
     const { _clarificationNeeded, ...cleanAfterUpdates } = (afterUpdates ?? {}) as any;
 
     if (_clarificationNeeded) {
-      const clarificationMessage = new AIMessage(_clarificationNeeded.question);
+      const clarificationMessage = new AIMessage(
+        `[CLARIFICATION_NEEDED] ${_clarificationNeeded.question}`
+      );
       return new Command({
         goto: END,
         update: {
@@ -115,7 +154,7 @@ export async function createLeadAgent(modelName?: string) {
 
   const graph = new StateGraph(AgentState)
     .addNode("callModel", callModel)
-    .addNode("tools", toolNode)
+    .addNode("tools", toolsWithArtifacts)
     .addEdge(START, "callModel")
     .addConditionalEdges("callModel", shouldContinue, ["tools", END])
     .addEdge("tools", "callModel")

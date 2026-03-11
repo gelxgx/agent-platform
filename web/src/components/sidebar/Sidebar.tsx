@@ -96,7 +96,7 @@ export function Sidebar({
 
         <Separator />
 
-        <InfoTabs />
+        <InfoTabs activeThreadId={activeThreadId} />
       </aside>
     </>
   );

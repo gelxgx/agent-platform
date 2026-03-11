@@ -11,10 +11,24 @@ export interface Artifact {
   createdAt: string;
 }
 
+export interface TodoItem {
+  id: string;
+  title: string;
+  status: "pending" | "in_progress" | "completed" | "cancelled";
+}
+
 export interface ThreadData {
   workspacePath: string;
   uploadsPath: string;
   outputsPath: string;
+}
+
+function mergeTodos(existing: TodoItem[], updates: TodoItem[]): TodoItem[] {
+  const map = new Map(existing.map((t) => [t.id, t]));
+  for (const todo of updates) {
+    map.set(todo.id, todo);
+  }
+  return Array.from(map.values());
 }
 
 function mergeArtifacts(
@@ -40,6 +54,10 @@ export const AgentState = Annotation.Root({
   }),
   artifacts: Annotation<Artifact[]>({
     reducer: mergeArtifacts,
+    default: () => [],
+  }),
+  todos: Annotation<TodoItem[]>({
+    reducer: mergeTodos,
     default: () => [],
   }),
   threadData: Annotation<ThreadData | undefined>({

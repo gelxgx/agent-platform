@@ -38,6 +38,16 @@ tools:
     enabled: true
   - name: "ask_clarification"
     enabled: true
+  - name: "present_files"
+    enabled: true
+  - name: "write_todos"
+    enabled: true
+  - name: "ls"
+    enabled: true
+  - name: "str_replace"
+    enabled: true
+  - name: "image_search"
+    enabled: true
 
 memory:
   enabled: true

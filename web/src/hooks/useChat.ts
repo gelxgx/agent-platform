@@ -7,9 +7,10 @@ export interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  files?: string[];
 }
 
-export function useChat(threadId: string, model?: string) {
+export function useChat(threadId: string, model?: string, planMode?: boolean) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
@@ -43,11 +44,12 @@ export function useChat(threadId: string, model?: string) {
   }, [threadId]);
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, files?: string[]) => {
       const userMsg: Message = {
         id: crypto.randomUUID(),
         role: "user",
         content,
+        files,
       };
 
       setMessages((prev) => [...prev, userMsg]);
@@ -62,7 +64,7 @@ export function useChat(threadId: string, model?: string) {
       ]);
 
       try {
-        for await (const event of streamChat(content, currentThreadId, model)) {
+        for await (const event of streamChat(content, currentThreadId, model, files, planMode)) {
           if (event.threadId && event.event === "thread") {
             setCurrentThreadId(event.threadId);
           }
@@ -81,7 +83,7 @@ export function useChat(threadId: string, model?: string) {
         setIsLoading(false);
       }
     },
-    [currentThreadId, model],
+    [currentThreadId, model, planMode],
   );
 
   const clearMessages = useCallback(() => {

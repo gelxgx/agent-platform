@@ -182,17 +182,19 @@ export async function startCli() {
         for await (const [message, _metadata] of stream) {
           if (!message.content) continue;
           if (typeof message.content === "string") {
-            process.stdout.write(message.content);
             fullOutput += message.content;
+            process.stdout.write(message.content.replace("[CLARIFICATION_NEEDED] ", ""));
           } else if (Array.isArray(message.content)) {
             for (const block of message.content) {
-              if (typeof block === "string") {
-                process.stdout.write(block);
-                fullOutput += block;
-              } else if (block && typeof block === "object" && "text" in block) {
-                const text = (block as { text: string }).text;
-                process.stdout.write(text);
-                fullOutput += text;
+              const chunk =
+                typeof block === "string"
+                  ? block
+                  : block && typeof block === "object" && "text" in block
+                    ? (block as { text: string }).text
+                    : "";
+              if (chunk) {
+                fullOutput += chunk;
+                process.stdout.write(chunk.replace("[CLARIFICATION_NEEDED] ", ""));
               }
             }
           }

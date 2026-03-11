@@ -4,10 +4,16 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Sparkles, Server } from "lucide-react";
+import { Brain, Sparkles, Server, Package, ListTodo } from "lucide-react";
 import { fetchSkills, fetchMemory, fetchMcpServers } from "@/lib/api";
+import { ArtifactPanel } from "./ArtifactPanel";
+import { TodoPanel } from "./TodoPanel";
 
-export function InfoTabs() {
+interface InfoTabsProps {
+  activeThreadId?: string;
+}
+
+export function InfoTabs({ activeThreadId }: InfoTabsProps) {
   const [memoryData, setMemoryData] = useState<any>(null);
   const [skillsData, setSkillsData] = useState<any>(null);
   const [mcpData, setMcpData] = useState<any>(null);
@@ -28,7 +34,7 @@ export function InfoTabs() {
 
   return (
     <Tabs defaultValue="memory" onValueChange={loadData} className="w-full">
-      <TabsList className="w-full grid grid-cols-3">
+      <TabsList className="w-full grid grid-cols-5">
         <TabsTrigger value="memory" className="text-xs gap-1">
           <Brain className="size-3" />
           记忆
@@ -40,6 +46,14 @@ export function InfoTabs() {
         <TabsTrigger value="mcp" className="text-xs gap-1">
           <Server className="size-3" />
           MCP
+        </TabsTrigger>
+        <TabsTrigger value="artifacts" className="text-xs gap-1">
+          <Package className="size-3" />
+          制品
+        </TabsTrigger>
+        <TabsTrigger value="todos" className="text-xs gap-1">
+          <ListTodo className="size-3" />
+          任务
         </TabsTrigger>
       </TabsList>
 
@@ -59,6 +73,26 @@ export function InfoTabs() {
         <ScrollArea className="h-40 rounded-lg border bg-muted/50 p-3">
           <McpView data={mcpData} />
         </ScrollArea>
+      </TabsContent>
+
+      <TabsContent value="artifacts" className="mt-2">
+        <div className="h-40 rounded-lg border bg-muted/50">
+          {activeThreadId ? (
+            <ArtifactPanel threadId={activeThreadId} />
+          ) : (
+            <p className="text-xs text-muted-foreground p-3">请选择一个对话</p>
+          )}
+        </div>
+      </TabsContent>
+
+      <TabsContent value="todos" className="mt-2">
+        <div className="h-40 rounded-lg border bg-muted/50">
+          {activeThreadId ? (
+            <TodoPanel threadId={activeThreadId} />
+          ) : (
+            <p className="text-xs text-muted-foreground p-3">请选择一个对话</p>
+          )}
+        </div>
       </TabsContent>
     </Tabs>
   );

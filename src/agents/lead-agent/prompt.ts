@@ -1,5 +1,7 @@
 import type { MemoryData } from "../../memory/types.js";
 import type { SkillMeta } from "../../skills/types.js";
+import type { UploadedFilesContext } from "../middlewares/uploads.js";
+import type { TodoItem } from "../thread-state.js";
 
 export interface SandboxContext {
   workspace: string;
@@ -12,7 +14,9 @@ export interface PromptOptions {
   subagentEnabled?: boolean;
   mcpToolNames?: string[];
   sandboxContext?: SandboxContext;
+  uploadedFiles?: UploadedFilesContext;
   maxInjectionFacts?: number;
+  todos?: TodoItem[];
 }
 
 export function buildSystemPrompt(options?: PromptOptions): string {
@@ -26,7 +30,12 @@ Current time: ${now}
 You have access to tools that allow you to:
 - Search the web for real-time information
 - Fetch web page content
-- Read and write files on the local filesystem`;
+- Read and write files on the local filesystem
+- Present files to the user as artifacts using the "present_files" tool
+- List directory contents using the "ls" tool
+- Make precise file edits using the "str_replace" tool
+- Search for images using the "image_search" tool
+- Track multi-step tasks using the "write_todos" tool`;
 
   if (options?.subagentEnabled) {
     prompt += `\n- Delegate complex sub-tasks to specialized agents via the "task" tool`;
@@ -42,7 +51,11 @@ You have access to tools that allow you to:
 4. When writing files, always confirm what was written.
 5. If you're unsure about something, say so rather than guessing.
 6. Think step by step for complex tasks.
-7. When the user's request is ambiguous or missing critical information, use the ask_clarification tool to ask for more details before proceeding. Do NOT guess.`;
+7. When the user's request is ambiguous or missing critical information, use the ask_clarification tool to ask for more details before proceeding. Do NOT guess.
+8. After generating files (reports, code, data), use the present_files tool to make them available to the user as downloadable artifacts.
+9. For complex multi-step tasks, use write_todos to create a task list first, then work through items one by one.
+10. Use str_replace for precise file edits instead of rewriting entire files.
+11. Use ls to explore directory contents before reading/writing files.`;
 
   if (options?.subagentEnabled) {
     prompt += buildSubagentSection();
@@ -58,6 +71,14 @@ You have access to tools that allow you to:
 
   if (options?.sandboxContext) {
     prompt += buildSandboxSection(options.sandboxContext);
+  }
+
+  if (options?.uploadedFiles) {
+    prompt += buildUploadsSection(options.uploadedFiles);
+  }
+
+  if (options?.todos?.length) {
+    prompt += buildTodosSection(options.todos);
   }
 
   if (options?.memory) {
@@ -120,8 +141,38 @@ function buildMemorySection(memory: MemoryData, maxFacts?: number): string {
   return parts.join("\n");
 }
 
+function buildUploadsSection(uploadedFiles: UploadedFilesContext): string {
+  let section = `\n\n## Uploaded Files\n\nThe user has uploaded the following files:\n`;
+  for (const name of uploadedFiles.fileNames) {
+    section += `- ${name}\n`;
+  }
+  if (uploadedFiles.fileContents.length > 0) {
+    section += `\nFile contents:\n`;
+    for (const file of uploadedFiles.fileContents) {
+      section += `\n### ${file.name}\n\`\`\`\n${file.content.slice(0, 5000)}\n\`\`\`\n`;
+    }
+  }
+  return section;
+}
+
 function buildMcpSection(toolNames: string[]): string {
   return `\n\n## External Tools (MCP)\n\nThe following tools are provided by external MCP servers:\n${toolNames.map((n) => `- ${n}`).join("\n")}\n\nThese tools work the same as built-in tools. Use them when relevant to the task.`;
+}
+
+function buildTodosSection(todos: TodoItem[]): string {
+  const statusIcons: Record<string, string> = {
+    pending: "⬜",
+    in_progress: "🔄",
+    completed: "✅",
+    cancelled: "❌",
+  };
+  let section = `\n\n## Current Task List\n\n`;
+  for (const todo of todos) {
+    const icon = statusIcons[todo.status] ?? "⬜";
+    section += `${icon} [${todo.id}] ${todo.title}\n`;
+  }
+  section += `\nUse write_todos to update task status as you complete items.`;
+  return section;
 }
 
 function buildSandboxSection(ctx: SandboxContext): string {
