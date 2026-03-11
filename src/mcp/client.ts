@@ -47,21 +47,23 @@ export function loadMcpServerConfigs(configPath?: string): McpServerConfig[] {
 /**
  * Convert our McpServerConfig[] into the format accepted by MultiServerMCPClient.
  */
-function buildClientConfig(
-  servers: McpServerConfig[]
-): Record<string, Record<string, unknown>> {
-  const config: Record<string, Record<string, unknown>> = {};
+function buildClientConfig(servers: McpServerConfig[]) {
+  const config: Record<
+    string,
+    | { transport: "stdio"; command: string; args: string[]; env?: Record<string, string> }
+    | { transport: "http"; url: string; headers?: Record<string, string> }
+  > = {};
   for (const server of servers) {
     if (server.transport === "stdio") {
       config[server.name] = {
-        transport: "stdio" as const,
+        transport: "stdio",
         command: server.command!,
         args: server.args ?? [],
         env: server.env,
       };
     } else if (server.transport === "http") {
       config[server.name] = {
-        transport: "http" as const,
+        transport: "http",
         url: server.url!,
         headers: server.headers,
       };
@@ -82,8 +84,8 @@ export async function initializeMcpClient(
   const servers = loadMcpServerConfigs(configPath);
   if (servers.length === 0) return [];
 
-  const clientConfig = buildClientConfig(servers);
-  clientInstance = new MultiServerMCPClient(clientConfig);
+  const mcpServers = buildClientConfig(servers);
+  clientInstance = new MultiServerMCPClient({ mcpServers });
 
   cachedTools = await clientInstance.getTools();
   console.log(

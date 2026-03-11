@@ -1,6 +1,7 @@
-import { StateGraph, START, END } from "@langchain/langgraph";
+import { StateGraph, START, END, MemorySaver } from "@langchain/langgraph";
 import { SqliteSaver } from "@langchain/langgraph-checkpoint-sqlite";
 import { AIMessage } from "@langchain/core/messages";
+import type { AppConfig } from "../../config/types.js";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { SystemMessage } from "@langchain/core/messages";
 import { AgentState, type AgentStateType } from "../thread-state.js";
@@ -13,6 +14,18 @@ import type { RuntimeConfig } from "../middlewares/types.js";
 import { createTaskTool } from "../../subagents/task-tool.js";
 import { loadSkills } from "../../skills/loader.js";
 import { loadConfig } from "../../config/loader.js";
+
+function createCheckpointer(config: AppConfig) {
+  const cpConfig = config.checkpointer;
+  const provider = cpConfig?.provider ?? "sqlite";
+
+  if (provider === "memory") {
+    return new MemorySaver();
+  }
+
+  const dbPath = cpConfig?.path ?? "data/checkpoints.db";
+  return SqliteSaver.fromConnString(dbPath);
+}
 
 function shouldContinue(state: AgentStateType): "tools" | typeof END {
   const lastMessage = state.messages.at(-1);
@@ -42,7 +55,7 @@ export async function createLeadAgent(modelName?: string) {
   const toolNode = new ToolNode(tools);
   const middlewareChain = createDefaultMiddlewareChain();
 
-  const skills = skillsEnabled ? loadSkills() : [];
+  const skills = skillsEnabled ? loadSkills(config.skills?.path) : [];
 
   async function callModel(state: AgentStateType) {
     const runtimeConfig: RuntimeConfig = {
@@ -64,6 +77,7 @@ export async function createLeadAgent(modelName?: string) {
         subagentEnabled,
         mcpToolNames: mcpToolNames.length > 0 ? mcpToolNames : undefined,
         sandboxContext,
+        maxInjectionFacts: config.memory?.maxInjectionFacts,
       })
     );
 
@@ -84,9 +98,7 @@ export async function createLeadAgent(modelName?: string) {
     };
   }
 
-  const cpConfig = config.checkpointer;
-  const dbPath = cpConfig?.path ?? "data/checkpoints.db";
-  const checkpointer = SqliteSaver.fromConnString(dbPath);
+  const checkpointer = createCheckpointer(config);
 
   const graph = new StateGraph(AgentState)
     .addNode("callModel", callModel)

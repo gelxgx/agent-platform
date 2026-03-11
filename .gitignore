@@ -5,6 +5,10 @@ data/
 *.log
 docs/plans/
 
+# Next.js
+web/.next/
+web/node_modules/
+
 # SQLite checkpoint databases
 data/checkpoints.db
 data/checkpoints.db-wal

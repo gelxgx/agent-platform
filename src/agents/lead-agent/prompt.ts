@@ -12,6 +12,7 @@ export interface PromptOptions {
   subagentEnabled?: boolean;
   mcpToolNames?: string[];
   sandboxContext?: SandboxContext;
+  maxInjectionFacts?: number;
 }
 
 export function buildSystemPrompt(options?: PromptOptions): string {
@@ -59,7 +60,7 @@ You have access to tools that allow you to:
   }
 
   if (options?.memory) {
-    prompt += buildMemorySection(options.memory);
+    prompt += buildMemorySection(options.memory, options.maxInjectionFacts);
   }
 
   return prompt;
@@ -91,7 +92,7 @@ function buildSkillsSection(skills: SkillMeta[]): string {
   return parts.join("\n");
 }
 
-function buildMemorySection(memory: MemoryData): string {
+function buildMemorySection(memory: MemoryData, maxFacts?: number): string {
   const parts: string[] = ["\n\n## Memory\n\n<memory>"];
 
   const ctx = memory.userContext;
@@ -105,9 +106,10 @@ function buildMemorySection(memory: MemoryData): string {
 
   if (memory.facts.length > 0) {
     parts.push("### Known Facts");
+    const limit = maxFacts ?? 15;
     const topFacts = memory.facts
       .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, 15);
+      .slice(0, limit);
     for (const fact of topFacts) {
       parts.push(`- ${fact.content}`);
     }

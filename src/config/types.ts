@@ -55,6 +55,12 @@ export interface CheckpointerConfig {
   path?: string;
 }
 
+export interface GatewayConfig {
+  enabled: boolean;
+  port: number;
+  corsOrigins?: string[];
+}
+
 export interface AppConfig {
   models: ModelConfig[];
   tools: ToolConfig[];
@@ -65,4 +71,5 @@ export interface AppConfig {
   mcp?: McpConfig;
   sandbox?: SandboxConfig;
   checkpointer?: CheckpointerConfig;
+  gateway?: GatewayConfig;
 }

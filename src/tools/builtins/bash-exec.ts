@@ -28,6 +28,8 @@ export const bashExecTool = tool(
     const threadId =
       (runManager as any)?.config?.configurable?.threadId ??
       (runManager as any)?.config?.configurable?.thread_id ??
+      (runManager as any)?.configurable?.threadId ??
+      (runManager as any)?.configurable?.thread_id ??
       "default";
     const sandbox = getSandbox();
 

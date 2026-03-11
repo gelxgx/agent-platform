@@ -32,7 +32,7 @@ describe("buildSystemPrompt", () => {
     expect(prompt).toContain("</memory>");
   });
 
-  it("should limit facts to top 15 by confidence", () => {
+  it("should limit facts to top 15 by confidence (default)", () => {
     const facts = Array.from({ length: 20 }, (_, i) => ({
       id: String(i),
       content: `Fact ${i}`,
@@ -49,7 +49,31 @@ describe("buildSystemPrompt", () => {
 
     const prompt = buildSystemPrompt({ memory });
     const factLines = prompt.split("\n").filter((l) => l.startsWith("- Fact"));
-    expect(factLines.length).toBeLessThanOrEqual(15);
+    expect(factLines.length).toBe(15);
+  });
+
+  it("should respect custom maxInjectionFacts", () => {
+    const facts = Array.from({ length: 20 }, (_, i) => ({
+      id: String(i),
+      content: `Fact ${i}`,
+      category: "knowledge" as const,
+      confidence: i / 20,
+      createdAt: "",
+    }));
+
+    const memory: MemoryData = {
+      userContext: { workContext: "", personalContext: "", topOfMind: "" },
+      facts,
+      lastUpdated: "",
+    };
+
+    const prompt5 = buildSystemPrompt({ memory, maxInjectionFacts: 5 });
+    const factLines5 = prompt5.split("\n").filter((l) => l.startsWith("- Fact"));
+    expect(factLines5.length).toBe(5);
+
+    const prompt30 = buildSystemPrompt({ memory, maxInjectionFacts: 30 });
+    const factLines30 = prompt30.split("\n").filter((l) => l.startsWith("- Fact"));
+    expect(factLines30.length).toBe(20);
   });
 
   it("should include MCP tool names when provided", () => {

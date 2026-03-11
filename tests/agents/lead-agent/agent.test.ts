@@ -41,4 +41,17 @@ describe("Lead Agent", () => {
     const dbPath = path.join(tmpDir, "test-checkpoints.db");
     expect(fs.existsSync(dbPath)).toBe(true);
   });
+
+  it("should use MemorySaver when provider is memory", async () => {
+    resetConfigCache();
+    const config = loadConfig(path.resolve("config.yaml"));
+    (config as any).checkpointer = { provider: "memory" };
+
+    const { createLeadAgent } = await import(
+      "../../../src/agents/lead-agent/agent.js"
+    );
+    const agent = await createLeadAgent();
+    expect(agent).toBeDefined();
+    expect(typeof agent.invoke).toBe("function");
+  });
 });

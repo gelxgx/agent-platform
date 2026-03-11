@@ -4,7 +4,19 @@ import type { ProviderFactory } from "./types.js";
 
 const PROVIDER_MAP: Record<string, ProviderFactory> = {
   openai: () =>
-    import("@langchain/openai").then((m) => m.ChatOpenAI as unknown as new (config: Record<string, unknown>) => BaseChatModel),
+    import("@langchain/openai").then(
+      (m) => m.ChatOpenAI as unknown as new (config: Record<string, unknown>) => BaseChatModel
+    ),
+  anthropic: () =>
+    // @ts-expect-error — optional peer dependency, installed on demand
+    import("@langchain/anthropic").then(
+      (m: any) => m.ChatAnthropic as unknown as new (config: Record<string, unknown>) => BaseChatModel
+    ),
+  google: () =>
+    // @ts-expect-error — optional peer dependency, installed on demand
+    import("@langchain/google-genai").then(
+      (m: any) => m.ChatGoogleGenerativeAI as unknown as new (config: Record<string, unknown>) => BaseChatModel
+    ),
 };
 
 export function registerProvider(name: string, factory: ProviderFactory): void {

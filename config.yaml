@@ -67,3 +67,8 @@ sandbox:
 checkpointer:
   provider: "sqlite"
   path: "data/checkpoints.db"
+
+gateway:
+  enabled: true
+  port: 3000
+  corsOrigins: ["http://localhost:3001"]

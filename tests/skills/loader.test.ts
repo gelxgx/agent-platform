@@ -31,4 +31,16 @@ describe("Skills Loader", () => {
     const skills = loadSkills("/nonexistent/path");
     expect(skills).toEqual([]);
   });
+
+  it("should load skills from custom path", () => {
+    const customPath = path.resolve("skills");
+    const skills = loadSkills(customPath);
+    expect(skills.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("should default to 'skills' when no path provided", () => {
+    const defaultSkills = loadSkills();
+    const explicitSkills = loadSkills(path.resolve("skills"));
+    expect(defaultSkills.length).toBe(explicitSkills.length);
+  });
 });
